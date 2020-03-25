@@ -50,6 +50,12 @@ try
                 Write-Output "Found an enabled 'Publish Build Artifacts' task"
                 $requiresUpdate = $true
 
+                $artifactType = "filepath"
+                if ($step.inputs.ArtifactType -eq "Container")
+                {
+                    $artifactType = "pipeline"
+                }
+
                 $replacementSteps += [PSCustomObject]@{
                     environment = $step.environment
                     enabled = $true
@@ -66,7 +72,7 @@ try
                     inputs = @{
                         path = $step.inputs.PathtoPublish
                         artifactName = $step.inputs.ArtifactName
-                        artifactType = "pipeline"
+                        artifactType = $artifactType
                         fileSharePath = $step.inputs.TargetPath
                         parallel = $step.inputs.Parallel
                         parallelCount = $step.inputs.ParallelCount
@@ -90,7 +96,8 @@ try
         Write-Output "Updating definition"
         $defintionContent | add-member -Name "comment" -Value "Tool assisted conversion of 'PublishBuildArtifacts' to 'PublishPipelineArtifacts'" -MemberType NoteProperty
         $updateBody = $defintionContent | ConvertTo-Json -Depth 32
-        Write-Output $updateBody
+        
+        # Write-Output $updateBody
 
         $updateResult = Invoke-WebRequest -Headers $allHeaders -Method PUT "$($accountUrl)/_apis/build/definitions/$($definitionId)?api-version=5.1" -Body $updateBody
 
